@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "node": ">= 16.6.0",
+  "engines": {
+    "node": ">= 16.6.0"
+  },
   "scripts": {
     "start": "node index.js",
     "bot": "node bot.js",
