@@ -2,67 +2,107 @@ require("dotenv").config();
 const DB_URL = process.env.DB_URL
 
 const makeLogin = async () => {
-    const EMAIL = process.env.EMAIL;
-    const PASSWORD = process.env.PASSWORD;
+    try {
+        const EMAIL = process.env.EMAIL;
+        const PASSWORD = process.env.PASSWORD;
 
-    const response = await fetch(`${DB_URL}/user/login`, {
-        method: "POST",
-        body: JSON.stringify({
-            email: EMAIL,
-            password: PASSWORD,
-        }),
-        headers: {
-            "Content-Type": "application/json"
-        }
-    })
-    const { data } = await response.json()
-    return data.token
-}
-
-const getAllMatchesByDate = async () => {
-    const date = getActualDate()
-    const token = await makeLogin()
-    const response = await fetch(`${DB_URL}/bydate`, {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            date
+        const response = await fetch(`${DB_URL}/user/login`, {
+            method: "POST",
+            body: JSON.stringify({
+                email: EMAIL,
+                password: PASSWORD,
+            }),
+            headers: {
+                "Content-Type": "application/json"
+            }
         })
-    })
-    const { data } = await response.json()
-    return data
+        const { data } = await response.json()
+        return data.token
+    } catch (error) {
+        console.log(error)
+    }
+
 }
 
-const getDate = async () => {
-    const matches = await getAllMatchesByDate()
-    // Add 6 hours to match hour
-    const datesHours = matches.map(match => new Date(match.local_date))
-    const dates = datesHours.map(hour => new Date(hour.setTime(hour.getTime() - 6 * 60 * 60 * 1000)))
-    // Transfrom form Qatar date To Argentina date
-    return { matchHours: dates, matchesData: matches }
+const getAllMatchesByDate = async (dateInput) => {
+    try {
+        const date = getActualDate(dateInput)
+        const token = process.env.TOKEN_API
+        const response = await fetch(`${DB_URL}/bydate`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                date
+            })
+        })
+        const { data } = await response.json()
+        return data
+    } catch (error) {
+        console.log(error)
+    }
 }
 
-const getActualDate = () => {
-    const date = new Date();
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear();
-
-    return `${month}/${day}/${year}`;
+const getDate = async (dateInput) => {
+    try {
+        const matches = await getAllMatchesByDate(dateInput)
+        // Add 6 hours to match hour
+        const datesHours = matches.map(match => new Date(match.local_date))
+        const dates = datesHours.map(hour => new Date(hour.setTime(hour.getTime() - 6 * 60 * 60 * 1000)))
+        // Transfrom form Qatar date To Argentina date
+        return { matchHours: dates, matchesData: matches }
+    }
+    catch (error) {
+        console.log(error)
+    }
 }
 
-const getMatchAlert = async () => {
-    const { matchHours, matchesData } = await getDate()
-    const actualHour = new Date()
-    const matchAlert = matchHours.findIndex(hour => hour > actualHour)
-    const hourOfProxMatch = matchHours[matchAlert].toLocaleTimeString().slice(0, 5)
-    return { index: matchAlert, hour: hourOfProxMatch, matchesData }
+const transformHours = (dateInput) => {
+    const dateHour = new Date(dateInput)
+    const date = new Date(dateHour.setTime(dateHour.getTime() - 6 * 60 * 60 * 1000))
+    return date
 }
 
-module.exports = getMatchAlert
+const getActualDate = (dateMatch) => {
+    if (dateMatch === "Hoy") {
+        const date = new Date();
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
+    }
+    else if (dateMatch === "Mañana") {
+        const date = new Date();
+        const day = date.getDate() + 1;
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
+    }
+}
+
+const getMatchAlert = async (dateInput) => {
+    try {
+        const { matchHours, matchesData } = await getDate(dateInput)
+        const actualHour = new Date()
+        const matches = matchHours.map(hour => {
+            // add 90 minutes to hour.setTime(hour.getTime() + 90 * 60 * 1000)
+            if (actualHour > hour && actualHour < hour.getTime() + 90 * 60 * 1000) {
+                return { status: "jugando", index: matchHours.indexOf(hour), hour: hour.toLocaleTimeString(), matchesInfo: matchesData }
+            }
+            if (actualHour < hour) return { status: "proximo", index: matchHours.indexOf(hour), hour: hour.toLocaleTimeString(), matchesInfo: matchesData }
+            else {
+                return { status: "finalizado", index: matchHours.indexOf(hour), hour: hour.toLocaleTimeString(), matchesInfo: matchesData }
+            }
+        })
+        return matches
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+module.exports = { getMatchAlert, transformHours }
 
 
 
