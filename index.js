@@ -1,6 +1,23 @@
 require("dotenv").config();
 const DB_URL = process.env.DB_URL
 
+const getActualDate = (dateMatch) => {
+    if (dateMatch === "Hoy") {
+        const date = new Date();
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
+    }
+    else if (dateMatch === "Mañana") {
+        const date = new Date();
+        const day = date.getDate() + 1;
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
+    }
+}
+
 const makeLogin = async () => {
     try {
         const EMAIL = process.env.EMAIL;
@@ -23,11 +40,11 @@ const makeLogin = async () => {
     }
 
 }
-
 const getAllMatchesByDate = async (dateInput) => {
     try {
         const date = getActualDate(dateInput)
-        const token = process.env.TOKEN_API
+        const token = await makeLogin()
+        console.log(token)
         const response = await fetch(`${DB_URL}/bydate`, {
             method: "POST",
             headers: {
@@ -63,23 +80,6 @@ const transformHours = (dateInput) => {
     const dateHour = new Date(dateInput)
     const date = new Date(dateHour.setTime(dateHour.getTime() - 6 * 60 * 60 * 1000))
     return date
-}
-
-const getActualDate = (dateMatch) => {
-    if (dateMatch === "Hoy") {
-        const date = new Date();
-        const day = date.getDate();
-        const month = date.getMonth() + 1;
-        const year = date.getFullYear();
-        return `${month}/${day}/${year}`;
-    }
-    else if (dateMatch === "Mañana") {
-        const date = new Date();
-        const day = date.getDate() + 1;
-        const month = date.getMonth() + 1;
-        const year = date.getFullYear();
-        return `${month}/${day}/${year}`;
-    }
 }
 
 const getMatchAlert = async (dateInput) => {

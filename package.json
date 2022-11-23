@@ -7,7 +7,7 @@
     "node": ">= 16.6.0"
   },
   "scripts": {
-    "start": "node index.js",
+    "start": "node bot.js",
     "start-dev": "nodemon index.js",
     "bot": "node bot.js",
     "bot-dev": "nodemon bot.js",

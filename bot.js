@@ -57,9 +57,8 @@ client.on("messageCreate", async message => {
     if (!message.content) return;
     if (message.content === 'proximo') {
         const matchData = await getMatchAlert("Hoy")
-        console.log(matchData.find(match => match.status === "proximo"))
         const proximoPartido = matchData.find(match => match.status === "proximo")
-        console.log(proximoPartido)
+        if (proximoPartido === undefined) return message.channel.send("No hay mas partidos hoy compa")
         const { index, hour, matchesInfo } = proximoPartido
         const match = matchesInfo[index]
         const embed = {
